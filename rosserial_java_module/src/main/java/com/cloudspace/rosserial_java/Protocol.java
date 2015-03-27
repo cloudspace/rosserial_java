@@ -33,6 +33,8 @@
 package com.cloudspace.rosserial_java;
 
 
+import android.util.Log;
+
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.ros.internal.message.Message;
@@ -51,7 +53,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import rosserial_msgs.TopicInfo;
-import rosserial_msgs.Log;
 import std_msgs.Time;
 
 /**
@@ -180,7 +181,6 @@ public class Protocol {
         String name = topic.getTopicName();
         String type = topic.getMessageType();
         // check if its already registered
-        android.util.Log.d("ADDING TOPIC", "Adding " + (is_publisher ? " publisher " : " subscriber ") + name + " of type " + type + " with id " + id);
         if (id_to_topic.containsKey(id)) {
             if (id_to_topic.get(id).getTopicName().equals(name))
                 return;
@@ -193,21 +193,28 @@ public class Protocol {
             id_to_topic.put(id, topic);
 
             if (is_publisher) {
-                Publisher pub = node.newPublisher(name, type);
-                publishers.put(id, pub);
-                node.getLog().info(
-                        "Adding Publisher " + name + " of type " + type);
-                if (newPubListener != null)
-                    newPubListener.onNewTopic(topic);
+                Publisher pub = publishers.get(id);
+                if (pub == null) {
+                    pub = node.newPublisher(name, type);
+                    publishers.put(id, pub);
+                    android.util.Log.d("ADDING TOPIC", "Adding " + (is_publisher ? " publisher " : " subscriber ") + name + " of type " + type + " with id " + id);
+                    if (newPubListener != null)
+                        newPubListener.onNewTopic(topic);
+                }
             } else {
-				Subscriber sub = node.newSubscriber(name, type);
-                sub.addMessageListener(new MessageListenerForwarding(id, this));
+                Subscriber sub = subscribers.get(id);
+                if (sub == null) {
+                    sub = node.newSubscriber(name, type);
+                    sub.addMessageListener(new MessageListenerForwarding(id, this));
+                    subscribers.put(id, sub);
+                    android.util.Log.d("ADDING TOPIC", "Adding " + (is_publisher ? " publisher " : " subscriber ") + name + " of type " + type + " with id " + id);
+                    if (newSubListener != null)
+                        newSubListener.onNewTopic(topic);
+                }
 
-                subscribers.put(id, sub);
                 node.getLog().info(
                         "Adding Subscriber " + name + " of type " + type);
-                if (newSubListener != null)
-                    newSubListener.onNewTopic(topic);
+
             }
         } catch (Exception e) {
             node.getLog().error("Exception while adding topic", e);
@@ -327,13 +334,13 @@ public class Protocol {
      * @param buffer
      */
     private void handleLogging(byte[] buffer) {
-        MessageDeserializer<Log> deserializer = node.getMessageSerializationFactory().newMessageDeserializer(Log._TYPE);
-        ChannelBuffer messageBuffer = MessageBuffers.dynamicBuffer();
-        messageBuffer.setBytes(0, buffer);
-        messageBuffer.writerIndex(buffer.length + 1);
-        Log msg = deserializer.deserialize(messageBuffer);
-        android.util.Log.d("GOT A LOG MESSAGE", msg.getMsg());
-
+//        MessageDeserializer<Log> deserializer = node.getMessageSerializationFactory().newMessageDeserializer(Log._TYPE);
+//        ChannelBuffer messageBuffer = MessageBuffers.dynamicBuffer();
+//        messageBuffer.setBytes(0, buffer);
+//        messageBuffer.writerIndex(buffer.length + 1);
+//        Log msg = deserializ.IOExceptioer.deserialize(messageBuffer);
+//        android.util.Log.d("GOT A LOG MESSAGE", msg.getMsg());
+//
 //        
 //        
 //
@@ -395,6 +402,7 @@ public class Protocol {
 
         @Override
         public void onNewMessage(MessageType t) {
+            Log.d("Forwarding Message", t.toString());
             protocol.packetHandler.send(protocol.constructMessage((Message) t), id);
         }
     }
