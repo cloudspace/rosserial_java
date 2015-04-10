@@ -8,7 +8,7 @@ public class NodeConnectionUtils extends AbstractNodeMain {
     String name;
     OnNodeConnectedListener listener;
     
-    public static interface OnNodeConnectedListener {
+    public interface OnNodeConnectedListener {
         void onNodeConnected(ConnectedNode node);
         
     }
