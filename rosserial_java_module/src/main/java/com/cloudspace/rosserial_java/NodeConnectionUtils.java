@@ -5,21 +5,19 @@ import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 
 public class NodeConnectionUtils extends AbstractNodeMain {
-    String name;
     OnNodeConnectedListener listener;
     
     public interface OnNodeConnectedListener {
         void onNodeConnected(ConnectedNode node);
         
     }
-    public NodeConnectionUtils(String name, OnNodeConnectedListener listener) {
-        this.name = name;
+    public NodeConnectionUtils(OnNodeConnectedListener listener) {
         this.listener = listener;
     }
 
     @Override
     public GraphName getDefaultNodeName() {
-        return GraphName.of(name);
+        return GraphName.newAnonymous();
     }
 
     @Override
