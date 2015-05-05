@@ -33,8 +33,6 @@
 package com.cloudspace.rosserial_java;
 
 
-import android.util.Log;
-
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.ros.internal.message.Message;
@@ -52,6 +50,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import rosserial_msgs.Log;
+import rosserial_msgs.RequestParam;
 import rosserial_msgs.TopicInfo;
 import std_msgs.Time;
 
@@ -70,6 +70,9 @@ public class Protocol {
 
     public static final byte[] NEGOTIATE_TOPICS_REQUEST = {
             (byte) 0xff, (byte) 0xfd, (byte) 0x00, (byte) 0x00, (byte) 0xff, (byte) 0x00, (byte) 0x00, (byte) 0xff};
+
+    private static final String SERIAL_TAG = "ROS Serial";
+
     /**
      * Node hosting the subscribers and publishers.
      */
@@ -334,44 +337,48 @@ public class Protocol {
      * @param buffer
      */
     private void handleLogging(byte[] buffer) {
-//        MessageDeserializer<Log> deserializer = node.getMessageSerializationFactory().newMessageDeserializer(Log._TYPE);
-//        ChannelBuffer messageBuffer = MessageBuffers.dynamicBuffer();
-//        messageBuffer.setBytes(0, buffer);
-//        messageBuffer.writerIndex(buffer.length + 1);
-//        Log msg = deserializ.IOExceptioer.deserialize(messageBuffer);
-//        android.util.Log.d("GOT A LOG MESSAGE", msg.getMsg());
-//
-//        
-//        
-//
-//        Log log_msg = new Log();
-//		log_msg.deserialize(msg_data);
-//		switch(log_msg.level){
-//		case Log.DEBUG:
-//			node.getLog().debug(log_msg.msg);
-//			break;
-//		case Log.INFO:
-//			node.getLog().info(log_msg.msg);
-//			break;
-//		case Log.WARN:
-//			node.getLog().warn(log_msg.msg);
-//			break;
-//		case Log.ERROR:
-//			node.getLog().error(log_msg.msg);
-//			break;
-//		case Log.FATAL:
-//			node.getLog().fatal(log_msg.msg);
-//			break;
-//		}
+        MessageDeserializer<Log> deserializer = node.getMessageSerializationFactory().newMessageDeserializer(Log._TYPE);
+        ChannelBuffer messageBuffer = MessageBuffers.dynamicBuffer();
+        messageBuffer.setBytes(0, buffer);
+        messageBuffer.writerIndex(buffer.length + 1);
+        Log msg = deserializer.deserialize(messageBuffer);
+        String msgData = msg.getMsg();
+        android.util.Log.d(SERIAL_TAG + " : " + msg.getLevel(), msgData);
+
+        switch (msg.getLevel()) {
+            case Log.ERROR:
+                node.getLog().error(msgData);
+                break;
+            case Log.FATAL:
+                node.getLog().fatal(msgData);
+                break;
+            case Log.INFO:
+                node.getLog().info(msgData);
+                break;
+            case Log.ROSDEBUG:
+                node.getLog().debug(msgData);
+                break;
+            case Log.WARN:
+                node.getLog().warn(msgData);
+                break;
+        }
     }
 
 
     ParameterTree paramT;
 
-    private void handleParameterRequest(byte[] msg_data) {
+    private void handleParameterRequest(byte[] buffer) {
 //		RequestParam rp = new RequestParam();
 //		RequestParam.Request req = rp.createRequest();
 //		req.deserialize(msg_data);
+        MessageDeserializer<RequestParam> deserializer = node.getMessageSerializationFactory().newMessageDeserializer(RequestParam._TYPE);
+        ChannelBuffer messageBuffer = MessageBuffers.dynamicBuffer();
+        messageBuffer.setBytes(0, buffer);
+        messageBuffer.writerIndex(buffer.length + 1);
+        RequestParam msg = deserializer.deserialize(messageBuffer);
+
+
+
 //
 //		RequestParam.Response resp = rp.createResponse();
 
@@ -402,7 +409,7 @@ public class Protocol {
 
         @Override
         public void onNewMessage(MessageType t) {
-            Log.d("Forwarding Message", t.toString());
+            android.util.Log.d("Forwarding Message", t.toString());
             protocol.packetHandler.send(protocol.constructMessage((Message) t), id);
         }
     }
