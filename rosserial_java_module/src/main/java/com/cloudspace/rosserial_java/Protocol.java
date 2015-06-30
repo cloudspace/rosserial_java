@@ -283,6 +283,7 @@ public class Protocol {
         switch (topic_id) {
             case TopicInfo.ID_PUBLISHER:
             case TopicInfo.ID_SUBSCRIBER:
+                android.util.Log.d("SUB BYTE " + topic_id, BinaryUtils.byteArrayToHexString(buffer));
 
                 ChannelBuffer channelBuffer = ChannelBuffers.dynamicBuffer(ByteOrder.LITTLE_ENDIAN, 458881);
                 channelBuffer.setBytes(0, buffer);
